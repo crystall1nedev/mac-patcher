@@ -1,0 +1,11 @@
+# macOS bullshit
+.DS_Store
+
+# internal patches
+*/
+
+# OCLP nightly
+OpenCore-Patcher.pkg
+
+# models file
+models

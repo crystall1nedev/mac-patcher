@@ -157,7 +157,6 @@ dofunction() {
         if [[ ${DRYRUN} == "1" ]]; then echo "  ${COMMANDS[$i]}"; else
         if [[ ${MORE_INTERACTION} == "1" ]]; then read -n 1 -s -r -p "Press any key to run the following command: ${COMMANDS[$i]}"; echo ""; fi
         eval "${COMMANDS[$i]}"; fi
-        echo "wait"
     done
     COMMANDS=()
 }
