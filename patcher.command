@@ -17,8 +17,8 @@ welcome() {
     if [[ -z ${SYSTEM} || ! -f ${SYSTEM}/System/Library/CoreServices/SystemVersion.plist ]]; then SYSTEM="/Volumes/Macintosh HD"; VALIDSYS=0; else echo "--system specified; ${SYSTEM}"; fi
     fi
     if [[ -f "${SYSTEM}/System/Library/CoreServices/SystemVersion.plist" ]]; then
-        TARGET_VERSION=$(plutil -convert json "${SYSTEM}"/System/Library/CoreServices/SystemVersion.plist -o - | jq ."ProductVersion" | sed s/\"//g)
-        TARGET_BUILD=$(plutil -convert json "${SYSTEM}"/System/Library/CoreServices/SystemVersion.plist -o - | jq ."ProductBuildVersion" | sed s/\"//g)
+        TARGET_VERSION=$(plutil -convert json "${SYSTEM}"/System/Library/CoreServices/SystemVersion.plist -o - | jq ."ProductVersion" --raw-output)
+        TARGET_BUILD=$(plutil -convert json "${SYSTEM}"/System/Library/CoreServices/SystemVersion.plist -o - | jq ."ProductBuildVersion" --raw-output)
         VALIDTARGET=1
     else
         TARGET_VERSION=$HOST_VERSION; TARGET_BUILD=$HOST_BUILD; VALIDTARGET=0
@@ -43,6 +43,7 @@ showopts() {
 --audio               Installs audio patches.
 --wifi                Installs WiFi patches.
 --t1                  Installs Apple T1 chip patches.
+--firewire            Installs FireWire patches.
 --kdk                 Installs kdk.pkg or kdk.dmg in the patch directory.
 --recovery            Indicate that you are patching from recoveryOS.
 --no-interaction      Indicate that you do not want to be asked for each patchset.
@@ -52,7 +53,7 @@ showopts() {
 There are various other undocumented options.
 If you need to use them, you should be able to read this script.
 """
-    exit 0
+    goodbye; exit 0
 }
 
 showdatahelp() {
@@ -75,6 +76,7 @@ patches themselves. Which ones you need depends on the hardware you ask for:
 |- ${TARGET_BUILD}/audio              - Audio patches.
 |- ${TARGET_BUILD}/wifi               - Wireless patches.
 |- ${TARGET_BUILD}/t1                 - Apple T1 chip patches.
+|- ${TARGET_BUILD}/firewire           - FireWire patches.
 
 Inside of these folders, you'll need to make a directory structure that mirrors where
 you want the file to go. Some examples are provided below:
@@ -112,6 +114,9 @@ while [[ $# -gt 0 ]]; do
       WIFI=1; shift ;;
     --t1)
       T1=1; shift ;;
+    --firewire)
+      welcome; echo "--firewire is not currently supported."; exit 1;
+      FIREWIRE=1; shift ;;
     --kdk)
       KDK=1; shift ;;
     --recovery)
@@ -148,6 +153,7 @@ dofunction() {
         audio) MESSAGE="begin audio patching"; shift ;;
         wifi) MESSAGE="begin wireless patching"; shift ;;
         t1) MESSAGE="begin T1 Security Chip patching"; shift ;;
+        firewire) MESSAGE="begin FireWire patching"; shift ;;
         finish) MESSAGE="finish patch installation"; shift ;;
         revert) MESSAGE="restore SSV"; shift ;;
         *) MESSAGE="How did you get here?"; exit 1; shift ;;
@@ -177,8 +183,8 @@ mount_function() {
     if [[ ${RECOVERY} == "1" ]]; then
         COMMANDS=( "mount -uw \"${SYSTEM}\"" )
     else
-        DISKID=$(diskutil info -plist "${SYSTEM}" | plutil -convert json -o - -- - | jq .DeviceIdentifier | sed s/\"//g)
-        ISSNAPSHOT=$(diskutil info -plist / | plutil -convert json -o - -- - | jq .APFSSnapshot)
+        DISKID=$(diskutil info -plist "${SYSTEM}" | plutil -convert json -o - -- - | jq .DeviceIdentifier --raw-output)
+        ISSNAPSHOT=$(diskutil info -plist / | plutil -convert json -o - -- - | jq .APFSSnapshot --raw-output)
         if [[ ${ISSNAPSHOT} == "true" ]]; then
             DISKID=${DISKID%??}
         fi
@@ -223,6 +229,12 @@ wifi_function() {
 t1_function() {
     copypatches "t1"
     dofunction "t1"
+    echo ""
+}
+
+firewire_function() {
+    copypatches "firewire"
+    dofunction "firewire"
     echo ""
 }
 
