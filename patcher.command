@@ -115,7 +115,6 @@ while [[ $# -gt 0 ]]; do
     --t1)
       T1=1; shift ;;
     --firewire)
-      welcome; echo "--firewire is not currently supported."; exit 1;
       FIREWIRE=1; shift ;;
     --kdk)
       KDK=1; shift ;;
